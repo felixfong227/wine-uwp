@@ -41,3 +41,67 @@ these steps.
 
 `../check-clean.sh` refuses PE images, app packages and payload, Windows images, metadata and fonts, and anything
 over 5 MB. `githooks/pre-commit` runs it; enable it once per clone with `git config core.hooksPath githooks`.
+
+## Optional runtime components
+
+These recipes build separate components. They do not install DLLs or change a prefix.
+Application-specific installation and launch settings belong in the consumer's integration project.
+See [UWP API checks](../docs/UWP-API-checks.md) for probe coverage and validation limits.
+
+### Push notifications
+
+Run `packaging/build-push-notifications.sh WINE_BUILD WINE_SOURCE OUTPUT` against an already built x64 Wine 11.20 tree.
+The default compiler is `x86_64-w64-mingw32-gcc`. Set `PE_CC` to override it.
+The script downloads unchanged sources from
+[WineGDK b53268302fd0b7479a4cb83d4c7719ba96eb28ad](https://github.com/BedrockNative/WineGDK/tree/b53268302fd0b7479a4cb83d4c7719ba96eb28ad).
+It checks them against `packaging/winegdk-push.sha256` and retains the LGPL license in the source cache.
+The output is `OUTPUT/wineuwp-push-notifications.dll`.
+
+The component supplies PushNotificationChannelManager activation.
+Its channel request completes asynchronously with WPN_E_PLATFORM_UNAVAILABLE and a null channel.
+It does not supply a working notification channel.
+The consumer reported a successful Linux build of the renamed module from `96f92cf`.
+Its factory and async error checks passed through the generated Lutris/umu launcher in a fresh candidate prefix.
+The tested artifact's SHA-256 and validation limits are in [UWP API checks](../docs/UWP-API-checks.md#integration-validation-november-6-2026).
+
+To select the component in a test prefix:
+
+1. Preserve the existing `DllPath` value for the following key:
+   `HKLM\Software\Microsoft\WindowsRuntime\ActivatableClassId\Windows.Networking.PushNotifications.PushNotificationChannelManager`.
+2. Set that value to the DLL's absolute Windows path.
+3. Include `wineuwp-push-notifications=n` in the DLL overrides.
+4. Restore the previous value after the temporary test.
+
+Do not run the component's registration export. It also registers unrelated connectivity classes.
+Build `probes/probe-push-notifications.c` with the generated header in `OUTPUT` and the Wine build/source include directories.
+
+### CoreWindow graphics
+
+Run `packaging/build-corewindow-graphics.sh OUTPUT` with a fresh output directory.
+The script requires Git, Meson, Ninja, glslang and x86_64 MinGW GCC/G++ on PATH.
+It fetches the following revisions and their pinned recursive submodules:
+
+- DXVK `a78a467cadb22bee928904290cf8e7921b121851`.
+- vkd3d-proton `cae2e003bb8251627ff93c0f471ae18a28234490`.
+
+`packaging/dxvk-corewindow.patch` adapts
+[Rosentti/dxvk-uwp 467bcf42](https://github.com/Rosentti/dxvk-uwp/tree/467bcf423560af41d937206858f0f49050c4aa26).
+It adds null checks and releases ICoreWindowInterop after reading the HWND.
+The original implementation failed the reference-lifetime probe. The corrected implementation passed the focused API checks.
+The patch retains the upstream license and identifies local changes.
+The recipe does not change vkd3d source.
+It defines PATHCCH_NONE as zero because the tested MinGW header omits that Windows enum value.
+
+The x64 DLL outputs are:
+
+- `OUTPUT/dxvk/x64/dxgi.dll` and `OUTPUT/dxvk/x64/d3d11.dll`.
+- `OUTPUT/vkd3d/x64/d3d12.dll` and `OUTPUT/vkd3d/x64/d3d12core.dll`.
+
+`SHA256SUMS`, `SOURCE-MANIFEST.txt` and license copies accompany the DLLs.
+The recipe uses two compiler jobs and refuses existing source/build directories.
+The earlier fresh Linux build compiled all four DLLs and passed the CoreWindow API probe.
+These results do not establish application compatibility.
+
+`probes/probe-corewindow-swapchain.c` checks references, null arguments and dummy-composition ResizeBuffers1.
+Its header contains the compile command.
+Run it in a separate prefix with candidate DLLs beside the executable and native DXGI/D3D12 overrides.
