@@ -28,7 +28,6 @@
 #include "aqs.h"
 #include "devpkey.h"
 #include "mmdeviceapi.h"
-#include "functiondiscoverykeys_devpkey.h"
 
 #include "wine/debug.h"
 
@@ -828,7 +827,7 @@ static HRESULT audio_endpoint_information( IMMDevice *device, EDataFlow flow, ID
     swprintf( interface_id, length + 1, L"%s%s#%s", prefix, device_id, guid );
 
     if (SUCCEEDED(IMMDevice_OpenPropertyStore( device, STGM_READ, &store )) &&
-        SUCCEEDED(IPropertyStore_GetValue( store, &PKEY_Device_FriendlyName, &name )) && name.vt == VT_LPWSTR)
+        SUCCEEDED(IPropertyStore_GetValue( store, (const PROPERTYKEY *)&DEVPKEY_Device_FriendlyName, &name )) && name.vt == VT_LPWSTR)
         friendly_name = name.pwszVal;
     properties[0].Buffer = (void *)friendly_name;
     properties[0].BufferSize = (wcslen(friendly_name) + 1) * sizeof(WCHAR);
