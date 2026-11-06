@@ -13698,3 +13698,167 @@ service). "Unable to connect to the Gears of War services" and the Store-user no
   container delete is sent too. State per container is in `.sync`, `.changed` and `.dirty`. It was verified end to end
   with `probe-xboxauth.exe cloudsync "SCID DIR"`: upload, download into an empty directory, and remote deletion, on
   Gears' SCID. The test container was deleted afterwards.
+
+## UWP API contracts and ownership, November 6, 2026
+
+Device-kind enumeration requires cfgmgr32 device records and the driver software-key lookup.
+The focused probe passed on x64 and x86, including device names and an empty query.
+Driver versions represent Wine compatibility values.
+Non-XAML FrameworkView startup also needs SetWindowAndGetDispatcher on its first view.
+
+Package information queries must accept a null count pointer during both size queries and result retrieval.
+Known-folder lookup must accept KF_FLAG_NO_APPCONTAINER_REDIRECTION because Wine already returns the unredirected path.
+The focused probes failed before those corrections and passed afterward.
+
+FileIO buffer and byte writes passed binary roundtrip, truncation, empty-write and read-only-error checks in x64.
+File and folder BasicProperties matched Win32 sizes and timestamps.
+File queries passed recursive name ordering, empty-directory, shallow-default and ranged-result checks.
+Both architectures compiled, but the x86 FileIO probe could not activate its class in the test prefix.
+StorageAccessCache remains process-local.
+
+The controller-user getter passed identity equality, local authentication and null-output checks with a real controller.
+Audio selectors, real endpoint enumeration, default-ID matching and WASAPI playback passed their isolated probe.
+The empty-player MediaPlayer regression failed ten assertions before its runtime correction and passed afterward in x64.
+
+The source review then found a query-options use-after-free, unsupported custom-controller registration and missing push-probe assertions.
+The query now retains options under a lock before scheduling.
+Hardware-ID registration returns upstream's E_NOTIMPL, and the probe rejects null result objects.
+The 14 host cases passed with AddressSanitizer and UndefinedBehaviorSanitizer.
+Earlier source failed ten cases, including three reproduced use-after-free reports.
+These checks use extracted C with mocks. Linux compilation and complete runtime regressions were still pending at that point.
+
+The probes and build recipes now use API-based names.
+The package fixtures use a synthetic identity.
+No Wine runtime source changed during this organization work.
+See [UWP-API-checks.md](UWP-API-checks.md) for contracts, source provenance and test limits.
+
+The Mac's system Bash cannot execute `${f,,}` in `check-clean.sh`.
+The script printed `bad substitution` but returned zero. That exit status did not establish a successful check.
+Equivalent staged-file checks passed for forbidden extensions, PE signatures and the 5 MiB limit.
+
+### Isolated Linux integration validation, November 6, 2026
+
+The consumer reported successful compilation of corrected windows.storage and windows.gaming.input for x86_64 and i386 on Steam Deck.
+The source is unchanged between `70cd8cb` and `96f92cf`.
+Only the isolated candidate received the DLLs. The working installation remained unchanged.
+
+Generic probes from `96f92cf` passed through the generated Lutris/umu launcher in a fresh candidate prefix.
+The checks covered BasicProperties, recursive/empty/ranged queries, binary writes, truncation, read-only errors, renamed push activation and controller-user association.
+The first controller run returned SKIP 77 without a gamepad.
+A second run passed with a neutral temporary uinput device. The consumer reported no input injection or target application launch.
+The consumer also reported a passing hardware-token probe.
+This result does not establish custom-controller factory support.
+
+The renamed notification recipe built `wineuwp-push-notifications.dll`, and its async error probe passed.
+The artifact checksum and precise limits are in [UWP-API-checks.md](UWP-API-checks.md#integration-validation-november-6-2026).
+The consumer retains the integration logs outside this repository.
+Compilation for both architectures does not establish x86 execution coverage for these probes.
+The complete app regression suite and application-level validation remain pending.
+
+
+### Hardware-factory activation regression, November 6, 2026
+
+A controlled consumer probe failed native factory initialization after hardware-ID registration changed to E_NOTIMPL.
+The same probe and prefix returned S_OK with a nonnull factory after restoring only the previous input DLL.
+This established an activation dependency. It did not establish correct matching-controller dispatch in the old implementation.
+The direct native-component evidence remains in the consumer project.
+
+The source correction retains hardware-ID factories and dispatches existing and later matching providers through their public controller interfaces.
+Wine's built-in controllers retain their private initialization path.
+The generic regression now checks activation, matching, callback identity, lookup, reference lifetimes, failed creation and callback re-entry.
+All 24 host cases pass with AddressSanitizer and UndefinedBehaviorSanitizer.
+The fallback baseline fails ten controller cases. The previous registration implementation fails nine.
+
+The new WinRT probe is `probes/probe-controller-factory.c`.
+Its registration mode needs no controller. Its `--controller` mode checks public callbacks and lookup with an existing device.
+It reads no input and injects none.
+Linux compilation and runtime validation were pending when this correction was committed.
+See [UWP-API-checks.md](UWP-API-checks.md#hardware-factory-registration-correction-november-6-2026) for contracts, build commands and limits.
+
+### Hardware-factory Linux validation, November 6, 2026
+
+The consumer reported successful x86_64 and i386 builds of windows.gaming.input from `4c5471b` using Wine 11.20.
+The generic factory probe passed registration and matching-controller modes in a separate Linux API prefix.
+The matching run created one controller and delivered one added callback, with no private-interface queries or failures.
+The consumer's native-component activation probe returned S_OK with a nonnull factory.
+The consumer retains the logs and native-component evidence outside this repository.
+
+The report does not identify the probe's execution architecture.
+Removal did not occur. Hotplug, removal, failure cleanup and callback re-entry still have host coverage only.
+The application still used the previous DLL at report time. Application validation of the corrected DLL remains pending.
+The complete app regression suite also remains pending.
+See [UWP-API-checks.md](UWP-API-checks.md#hardware-factory-linux-validation-november-6-2026) for the reported outputs and DLL hashes.
+
+
+### Explicit FolderPicker path, November 6, 2026
+
+The existing open and save pickers have environment overrides. FolderPicker previously had no equivalent.
+Upstream Wine has no storage-picker implementation to reuse at the checked revision.
+WineGDK's picker uses dialogs, and its start-folder configuration does not return an automatic selection.
+
+WINE_UWP_PICKER_FOLDER now accepts an existing absolute Windows folder path.
+Invalid, missing, non-folder or oversized values fail without opening a dialog or selecting another folder.
+Unset preserves the existing dialog and NODIALOG behavior.
+The runtime creates no directories, chooses no default, and does not persist access-cache tokens.
+
+All 40 host cases pass under ASan and UBSan.
+The previous source fails 13 new folder cases. The three unset cases pass before and after the change.
+The standalone probe adds real API checks and an optional manual cancellation mode.
+Linux compilation, API execution and full application regressions remain pending.
+No Wine source checkout or Linux runtime is available on this Mac.
+See [UWP-API-checks.md](UWP-API-checks.md#explicit-folder-override-november-6-2026) for contracts, provenance and build commands.
+
+
+### Controller apartments and picker probe diagnostics, November 6, 2026
+
+Independent review found raw factory pointers crossing apartments and a device-monitor thread without COM initialization.
+The candidate replaces external factory and controller references with RoGetAgileReference handles.
+It resolves interfaces and calls external objects outside the manager lock.
+It initializes COM on the monitor and handles removal during controller creation and added callbacks.
+The public probe adds real STA/agile hotplug, MTA lookup and callback re-entry checks.
+All 42 host tests pass. Reported COM execution results follow below; final independent reviews remain required.
+
+The picker probe lacked wchar.h and returned opaque fixture setup failures.
+The corrected probe adds the header, checks formatting, and reports the failing call, path and Win32 error.
+The consumer compiled the header correction for both architectures with implicit declarations treated as errors.
+Its first execution failed before picker API calls because Unicode fixture creation returned error 2.
+The consumer reported that LC_ALL=C.UTF-8 resolved this failure.
+The isolated x86_64 and i686 API tests then passed against the `a0ba1e8` picker DLLs.
+The consumer restored the baseline DLLs afterward.
+Further diagnostic edits escape Unicode paths and separate the ASCII root from the Unicode child.
+The consumer compiled and executed the final diagnostic source, SHA-256 `1a14606b80a4385cd13bbde3ecffef47844c9a082f0d7a9d2196f48f85c44e75`, successfully on both architectures.
+Its x86_64 manual cancellation run opened Browse for Folder with overrides unset; Escape returned S_OK and null, with FOLDER_PICKER_PASS and exit zero.
+The manual dialog path remains untested on i686.
+See [UWP-API-checks.md](UWP-API-checks.md#review-corrections-and-consumer-validation-november-6-2026) for the exact test boundaries and remaining checks.
+
+### Controller apartment execution results, November 6, 2026
+
+Both candidate windows.gaming.input DLLs compiled and linked in the consumer's isolated Linux build.
+The first probe did not compile because Wine 11.20's headers lack the newer COWAIT_DISPATCH flags.
+Using COWAIT_DEFAULT retains Wine's classic STA message pumping and compiles with those headers.
+The i686 SDK's runtimeobject import library also lacks RoGetAgileReference@16.
+Linking Wine's i386 combase import library before the other libraries resolved that link error without changing the probe.
+
+The consumer reported passing x86_64 STA and agile hotplug runs and a passing i686 agile run.
+Each created one controller, delivered one added and one removed callback, and reported no private-interface queries or failures.
+The STA callbacks ran on their owner thread. The agile callbacks and MTA lookup ran on separate threads.
+Reentrant registration, lookup and COM activation were exercised by these runs.
+
+The i686 STA run failed during registration, before READY_ADD and before any device was created.
+CoMarshalInterface failed for ICustomGameControllerFactory with E_NOINTERFACE after interface-stub creation failed.
+The consumer then measured a metadata setup mismatch: x86_64 loaded 20 native files and found the factory IID; i686 loaded 10 reduced files and did not.
+WOW64 redirected the i686 metadata lookup into SysWOW64, which lacked Windows.Gaming.winmd.
+Adding only that file in the isolated fixture let the unchanged probe register and call CreateGameController on its STA owner thread.
+The returned IGameController then failed to marshal with E_NOTIMPL; OnGameControllerAdded never arrived and the wait timed out.
+The consumer restored the temporary metadata, device fixture and API runtime.
+The final differentiation supplied the complete 20-file native System32 metadata set in the isolated SysWOW64 view.
+The unchanged i686 candidate and probe then passed every STA callback and MTA lookup check, with callbacks on owner thread 248 and no failures.
+The metadata trace confirmed that Wine's fallback generated the required interfaces despite unavailable registered proxy classes.
+The original missing gaming metadata and the dependent metadata missing from the gaming-only attempt caused the two earlier failures.
+Both failures remain recorded. The corrected fixture establishes passing STA and agile execution on both architectures; it does not make the restored reduced metadata fixture sufficient.
+The consumer restored the original 10-file SysWOW64 metadata tree and API runtime and removed every temporary device.
+Documented install and probe prerequisites now require the complete native metadata set in both architecture views.
+No additional runtime patch was needed. The final independent reviews and complete app regression suite remain pending.
+The final main.c removes only the trailing blank line from the live-tested source and compiled for both architectures.
+Its rebuilt DLLs were not used for the live COM runs; the exact source and DLL hashes are recorded with that boundary below.
+See [UWP-API-checks.md](UWP-API-checks.md#controller-apartment-execution-november-6-2026) for exact source hashes and per-architecture results.

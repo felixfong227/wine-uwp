@@ -386,6 +386,7 @@ dlls/windows.system.memorymanager/main.c
 dlls/windows.system.memorymanager/windows.system.memorymanager.spec
 dlls/windows.services.store/Makefile.in
 dlls/windows.services.store/main.c
+dlls/windows.services.store/updates.c
 dlls/windows.services.store/windows.services.store.spec
 dlls/windows.devices.enumeration/main.c
 dlls/windows.networking.connectivity/Makefile.in
@@ -495,3 +496,10 @@ dlls/winexboxauth/cloudsave.c
 dlls/winexboxauth/deviceaddr.c
 dlls/winexboxauth/gamesave.c
 dlls/vcruntime140/misc.c
+dlls/cfgmgr32/cfgmgr32.c
+dlls/cfgmgr32/cfgmgr32_private.h
+dlls/cfgmgr32/devobject.c
+dlls/windows.devices.enumeration/information.c
+dlls/windows.gaming.input/main.c
+dlls/windows.gaming.input/manager.c
+dlls/shell32/shellpath.c
